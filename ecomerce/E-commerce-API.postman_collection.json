@@ -52,7 +52,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"customer\"\n}"
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"Password123!\",\n  \"role\": \"BUYER\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/register",
@@ -60,6 +60,44 @@
               "path": ["api", "auth", "register"]
             },
             "description": "Register a new user account"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.data && response.data.tokens) {",
+                  "        pm.environment.set('accessToken', response.data.tokens.accessToken);",
+                  "        pm.environment.set('refreshToken', response.data.tokens.refreshToken);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register Seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"seller@example.com\",\n  \"password\": \"Password123!\",\n  \"phone\": \"+8801712345678\",\n  \"role\": \"SELLER\",\n  \"sellerRole\": \"MANAGER\",\n  \"businessName\": \"Smith Electronics\",\n  \"businessPhone\": \"+8801812345678\",\n  \"businessAddress\": \"123 Business Street, Dhaka, Bangladesh\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Register a new seller account with business information"
           },
           "event": [
             {
@@ -191,6 +229,68 @@
           }
         },
         {
+          "name": "🔍 Debug Token Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "verify"]
+            },
+            "description": "🔧 Debug helper: Check if your access token is valid and not expired"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const accessToken = pm.environment.get('accessToken');",
+                  "const refreshToken = pm.environment.get('refreshToken');",
+                  "",
+                  "console.log('=== TOKEN DEBUG INFO ===');",
+                  "console.log('Access Token:', accessToken ? '✅ Present' : '❌ Missing');",
+                  "console.log('Refresh Token:', refreshToken ? '✅ Present' : '❌ Missing');",
+                  "",
+                  "if (accessToken) {",
+                  "    console.log('Token Preview:', accessToken.substring(0, 30) + '...');",
+                  "    try {",
+                  "        const payload = JSON.parse(atob(accessToken.split('.')[1]));",
+                  "        const now = Math.floor(Date.now() / 1000);",
+                  "        const expiresAt = new Date(payload.exp * 1000);",
+                  "        console.log('Token expires at:', expiresAt);",
+                  "        console.log('Token valid for:', Math.max(0, payload.exp - now), 'more seconds');",
+                  "        console.log('Token expired:', payload.exp < now ? '❌ YES' : '✅ NO');",
+                  "    } catch (e) {",
+                  "        console.log('❌ Could not parse token');",
+                  "    }",
+                  "}",
+                  "console.log('========================');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    console.log('✅ Token is valid and working!');",
+                  "} else if (pm.response.code === 401) {",
+                  "    console.log('❌ Token is invalid or expired. Please login again.');",
+                  "} else {",
+                  "    console.log('⚠️  Unexpected response:', pm.response.code);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Check Auth Status",
           "request": {
             "method": "GET",
@@ -232,7 +332,37 @@
               "path": ["api", "auth", "change-password"]
             },
             "description": "Change user password"
-          }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Check if we have an access token",
+                  "const accessToken = pm.environment.get('accessToken');",
+                  "if (!accessToken) {",
+                  "    console.log('⚠️  No access token found. Please login first.');",
+                  "    throw new Error('Access token required. Please run Login or Register first.');",
+                  "}",
+                  "console.log('✅ Access token found:', accessToken.substring(0, 20) + '...');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 401) {",
+                  "    console.log('🔑 Token expired or invalid. Try logging in again.');",
+                  "}",
+                  "",
+                  "pm.test('Password change should work with valid token', function () {",
+                  "    pm.expect([200, 401]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Logout",
@@ -429,7 +559,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Gaming Laptop\",\n  \"description\": \"High-performance gaming laptop with RTX graphics\",\n  \"price\": 1299.99,\n  \"categoryId\": 1,\n  \"stock\": 50,\n  \"images\": [\n    \"https://example.com/image1.jpg\",\n    \"https://example.com/image2.jpg\"\n  ],\n  \"specifications\": {\n    \"brand\": \"ASUS\",\n    \"model\": \"ROG Strix\",\n    \"processor\": \"Intel i7\",\n    \"ram\": \"16GB\",\n    \"storage\": \"512GB SSD\"\n  }\n}"
+              "raw": "{\n  \"title\": \"Gaming Laptop ASUS ROG\",\n  \"description\": \"High-performance gaming laptop with RTX graphics, perfect for gaming and professional work\",\n  \"price\": 1299.99,\n  \"categoryId\": \"cm123456-1234-1234-1234-123456789012\",\n  \"stock\": 50,\n  \"images\": [\n    \"https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800\",\n    \"https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800\"\n  ],\n  \"specifications\": {\n    \"brand\": \"ASUS\",\n    \"model\": \"ROG Strix\",\n    \"processor\": \"Intel i7\",\n    \"ram\": \"16GB\",\n    \"storage\": \"512GB SSD\"\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/products",

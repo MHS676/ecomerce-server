@@ -47,11 +47,17 @@ npm start
 
 ### 3. Authentication Flow
 
-1. **Register User** - Create a new account
+1. **Register User** - Create a new buyer account
+   - Uses role: "BUYER" (default)
    - Automatically saves tokens to environment variables
-2. **Login User** - Login with existing credentials
+2. **Register Seller** - Create a seller account with business information
+   - Uses role: "SELLER"
+   - Requires additional fields: sellerRole, businessName, businessPhone, businessAddress
+   - Available sellerRoles: "MANAGER", "ACCOUNTANT", "INVENTORY_STAFF"
    - Automatically saves tokens to environment variables
-3. **Get Profile** - Test authentication with saved token
+3. **Login User** - Login with existing credentials
+   - Automatically saves tokens to environment variables
+4. **Get Profile** - Test authentication with saved token
 
 ### 4. Product Management (Requires Authentication)
 
@@ -119,6 +125,27 @@ The collection includes automatic token management:
 
 _Note: Some endpoints are placeholders and will return "coming soon" messages._
 
+## User Roles & Permissions
+
+### Available User Roles
+
+- **BUYER** (default): Can browse products, place orders, manage their profile
+- **SELLER**: Can manage their own products, view their orders, business account features
+- **ADMIN**: Full system access, can manage all users, products, and orders
+
+### Seller Roles (for SELLER users)
+
+- **MANAGER**: Full business management access
+- **ACCOUNTANT**: Financial and reporting access
+- **INVENTORY_STAFF**: Product and stock management access
+
+### Role-based Access Examples
+
+- **Public Access**: Health check, API info, browse products
+- **BUYER Access**: Place orders, manage cart, user profile
+- **SELLER Access**: Create/manage own products, view seller dashboard
+- **ADMIN Access**: Manage all users, products, system administration
+
 ## Testing Tips
 
 1. **Start with Health Check** - Ensure server is running
@@ -131,21 +158,31 @@ _Note: Some endpoints are placeholders and will return "coming soon" messages._
 
 ### Common Issues
 
-1. **401 Unauthorized**
+1. **401 Unauthorized - "Invalid or expired access token"**
 
-   - Check if you're logged in
-   - Verify access token is set in environment
-   - Try refreshing token
+   - ⚠️ **Most Common Issue**: No login performed first
+   - **Solution**: Run "Register User" or "Login User" first to get tokens
+   - **Check**: Use "🔍 Debug Token Status" to verify token validity
+   - **Token Expiry**: Access tokens expire in 15 minutes - login again if expired
+   - **Environment**: Verify token is saved in environment variables
 
 2. **404 Not Found**
 
-   - Ensure server is running on correct port
+   - Ensure server is running on correct port (http://localhost:5000)
    - Check if endpoint exists (some are placeholders)
+   - Verify API path is correct
 
 3. **500 Internal Server Error**
+
    - Check server console for detailed error
-   - Ensure database is connected
-   - Verify environment variables are set
+   - Ensure database is connected and migrated (`npx prisma migrate dev`)
+   - Verify environment variables are set in `.env` file
+
+4. **Token Debugging Steps**
+   - Use "🔍 Debug Token Status" endpoint to check token validity
+   - Check Postman Console for token information
+   - Verify tokens are auto-saved after login/register
+   - Ensure Authorization header format: `Bearer <token>`
 
 ### Server Requirements
 

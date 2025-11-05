@@ -16,8 +16,8 @@ export class ProductController {
   async getProducts(req: AuthenticatedRequest, res: Response<ApiResponse>, next: NextFunction) {
     try {
       const {
-        page = 1,
-        limit = 10,
+        page: pageParam = '1',
+        limit: limitParam = '10',
         category,
         search,
         minPrice,
@@ -29,6 +29,9 @@ export class ProductController {
         order = 'desc',
       } = req.query as any;
 
+      // Convert string parameters to numbers
+      const page = parseInt(pageParam as string, 10) || 1;
+      const limit = parseInt(limitParam as string, 10) || 10;
       const skip = (page - 1) * limit;
       
       // Build where clause
@@ -395,14 +398,17 @@ export class ProductController {
   async getSellerProducts(req: AuthenticatedRequest, res: Response<ApiResponse>, next: NextFunction) {
     try {
       const {
-        page = 1,
-        limit = 10,
+        page: pageParam = '1',
+        limit: limitParam = '10',
         search,
         isActive,
         sort = 'createdAt',
         order = 'desc',
       } = req.query as any;
 
+      // Convert string parameters to numbers
+      const page = parseInt(pageParam as string, 10) || 1;
+      const limit = parseInt(limitParam as string, 10) || 10;
       const sellerId = req.user!.id;
       const skip = (page - 1) * limit;
 
@@ -460,16 +466,19 @@ export class ProductController {
   async searchProducts(req: AuthenticatedRequest, res: Response<ApiResponse>, next: NextFunction) {
     try {
       const {
-        query = '',
+        q: query = '',
         category,
         minPrice,
         maxPrice,
         rating,
         sortBy = 'newest',
-        page = 1,
-        limit = 10,
+        page: pageParam = '1',
+        limit: limitParam = '10',
       } = req.query as any;
 
+      // Convert string parameters to numbers
+      const page = parseInt(pageParam as string, 10) || 1;
+      const limit = parseInt(limitParam as string, 10) || 10;
       const skip = (page - 1) * limit;
 
       // Build where clause

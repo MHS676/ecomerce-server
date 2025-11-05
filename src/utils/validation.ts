@@ -249,7 +249,7 @@ export const createNotificationSchema = z.object({
 
 // Search schemas
 export const searchSchema = z.object({
-  query: z.string().min(1, 'Search query is required'),
+  q: z.string().min(1, 'Search query is required'),
   category: z.string().optional(),
   minPrice: z.coerce.number().positive().optional(),
   maxPrice: z.coerce.number().positive().optional(),
